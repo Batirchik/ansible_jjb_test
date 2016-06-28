@@ -1,0 +1,6 @@
+argparse
+requests
+paramiko
+jenkins-job-builder
+anymarkup
+configparser

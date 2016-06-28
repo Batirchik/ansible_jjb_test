@@ -1,0 +1,17 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - stat: path=Vagrantfile
+      register: v_file
+
+    - name: Provision vagrant vm
+      command: 'vagrant up'
+      failed_when: not v_file.stat.exists
+
+    - name: Verify that VM is up and running.
+      shell: 'vagrant status'
+      register: vagrant_status
+      failed_when: "vagrant_status.stdout and 'The VM is running' not in vagrant_status.stdout"

@@ -1,0 +1,62 @@
+Task
+
+1. Write a playbook that creates a VM using any tool you'd like (example: you can use https://virt-manager.org/) the VM
+name should be: "jenkins" and adds it to our inventory list dynamically.
+2. Write a play that logs into the Jenkins machine and does the following:
+a. create a user group called "ci-users" on the system.
+b. create a new user called "limited-ed" without a home directory or shell access - add this user to group "ci-users"
+c. install and configure Jenkins to work such that it can be accessed from your local browser
+3. setup a simple job that emulate a workflow / E2E cycle, something like:
+a. clone project
+b. build it
+c. test it
+4. Using Jenkins-job-builder (http://docs.openstack.org/infra/jenkins-job-builder/) convert the above job definition to
+a JJB yaml and create a script that build this job automatically
+
+
+Status and comments:
+1. I chose Vagrant (since virt-manager doesn't have OSX support).
+The issue I faced is that vagrant module (https://github.com/robparrott/ansible-vagrant) is very outdated and the adding
+VM to our inventory list dynamically requires the module upgrade and costs additional efforts (my estimates: 4 days).
+
+I had 2 ways: change the provider or use an inventory plugin. I chose the second one.
+vagrant.py is used for retrieving the dynamic inventory info.
+If it's not an appropriate solution I can change it (as mentioned above).
+
+Vagrant preparations:
+    `vagrant box add geerlingguy/centos6`
+
+Action to perform in this step:
+
+    `ansible-playbook playbooks/vm_provision.yml`
+
+2. Using a set of roles from Ansible Galaxy to install all the required components for our Jenkins server.
+
+Action to perform in this step:
+a) Install the required roles:
+    `ansible-galaxy install -r requirements.yml`
+
+b) Provision jenkins:
+    `ansible-playbook playbooks/jenkins_provision.yml -i dynamic_inventory_modules/vagrant.py`
+
+c) install and configure Jenkins to work such that it can be accessed from your local browser
+ This will be accomplished by a forwarded_port which is set in Vagrantfile.
+
+
+3. What was done manually:
+Configure and installed maven and maven2 plugin via Jenkins configuration menu.
+Setup the job which retrieve git repo from https://github.com/Batirchik/java-maven-junit-helloworld.git
+and runs 'clean install' maven phases. Test phase is automatically launched before the install phase.
+
+4. Jenkins-job-builder converts the configs from yml to xml format but not vice versa.
+Need to use some additional tools like `anymarkup`.
+anymarkup fails to serialize appropriate yaml file for jenkins_job_manager
+
+Preparation:
+Setup jjb_part/jenkins_job.ini with appropriate Jenkins info
+
+jjb_part/jenkins_job_manager.py script is supposed to be used for the jobs management.
+How-to:
+To get job config: python jjb_part/jenkins_job_manager.py -l jjb_part/jenkins_job.ini -n ${JOB_NAME} -a get -c ${JOB_LOCAL_CONFIG_PATH}
+To update job config: python jjb_part/jenkins_job_manager.py -l jjb_part/jenkins_job.ini -n ${JOB_NAME} -a update -c ${JOB_LOCAL_CONFIG_PATH}
+

@@ -1,0 +1,40 @@
+- hosts: jenkins
+  become: yes
+  vars:
+    group_to_add: ci-users
+    user_to_add: limited-ed
+    firewall_allowed_tcp_ports:
+      - "22"
+      - "8080"
+    jenkins_plugins: [maven-plugin]
+
+  pre_tasks:
+  - name: Create the group
+    group: name={{ group_to_add }} state=present
+
+  - name: Create the user
+    user: name={{ user_to_add }} shell=/bin/False groups={{ group_to_add }} append=yes
+
+  roles:
+    - geerlingguy.firewall
+    - geerlingguy.java
+    - geerlingguy.jenkins
+
+  post_tasks:
+#    - name: Add repository with maven
+#      get_url: url=http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo dest=/etc/yum.repos.d/epel-apache-maven.repo
+#
+#    - name: Install necessary packages
+#      yum: name=apache-maven state=latest
+
+    - name: Install git packages
+      yum: name=git state=latest
+
+    - name: Install git packages
+      yum: name=python-setuptools state=latest
+
+#    - name: Install pip
+#      easy_install: name=pip state=latest
+#
+#    - name: Install jjb packages
+#      pip: name=jenkins-job-builder
